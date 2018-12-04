@@ -151,7 +151,9 @@ static void gicv2m_realize(DeviceState *dev, Error **errp)
         sysbus_init_irq(SYS_BUS_DEVICE(dev), &s->spi[i]);
     }
 
-    msi_nonbroken = true;
+    /* workaround: Disable MSI-X for Windows 10 ARM64 on KVM */
+    fprintf(stderr, "%s: Disable MSI-X for Windows 10 ARM64 on KVM\n", __func__);
+    msi_nonbroken = false;
     kvm_gsi_direct_mapping = true;
     kvm_msi_via_irqfd_allowed = kvm_irqfds_enabled();
 }

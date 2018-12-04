@@ -772,9 +772,10 @@ build_dsdt(GArray *table_data, BIOSLinker *linker, VirtMachineState *vms)
                     (irqmap[VIRT_MMIO] + ARM_SPI_BASE), NUM_VIRTIO_TRANSPORTS);
     acpi_dsdt_add_pci(scope, memmap, (irqmap[VIRT_PCIE] + ARM_SPI_BASE),
                       vms->highmem, vms->highmem_ecam);
-    acpi_dsdt_add_gpio(scope, &memmap[VIRT_GPIO],
-                       (irqmap[VIRT_GPIO] + ARM_SPI_BASE));
-    acpi_dsdt_add_power_button(scope);
+    /* workaround: Remove GPIO devices from DSDT for Windows 10 ARM64 on KVM */
+    //acpi_dsdt_add_gpio(scope, &memmap[VIRT_GPIO],
+    //                   (irqmap[VIRT_GPIO] + ARM_SPI_BASE));
+    //acpi_dsdt_add_power_button(scope);
 
     aml_append(dsdt, scope);
 
