@@ -117,6 +117,40 @@ typedef struct AcpiFadtData {
 #define ACPI_FADT_ARM_PSCI_COMPLIANT  (1 << 0)
 #define ACPI_FADT_ARM_PSCI_USE_HVC    (1 << 1)
 
+ /*
+  * Debug Port Table 2 (DBG2)
+  *
+  * For .interface_type see Debug Port Table 2 (DBG2) serial port
+  * subtypes in Table 3, Rev. Aug 10, 2015
+  *
+  * The specification permits multiple ports with multiple addresses, but this
+  * implementation is limited to one port with one address.
+  */
+struct AcpiDebugPort2 {
+    ACPI_TABLE_HEADER_DEF
+    uint32_t debug_devices_offset;
+    uint32_t number_debug_devices;
+    struct {
+      uint8_t  revision;
+      uint16_t length;
+      uint8_t  number_generic_address_registers;
+      uint16_t namespace_string_length;
+      uint16_t namespace_string_offset;
+      uint16_t oem_data_length;
+      uint16_t oem_data_offset;
+      uint16_t port_type;
+      uint16_t port_subtype;
+      uint8_t  reserved1[2];
+      uint16_t base_address_register_offset;
+      uint16_t address_size_offset;
+      struct AcpiGenericAddress base_address[1];
+      uint32_t address_size[1];
+      uint8_t  namespace_string[2];
+    } QEMU_PACKED debug_devices[1];
+} QEMU_PACKED;
+typedef struct AcpiDebugPort2
+               AcpiDebugPort2;
+
 /*
  * Serial Port Console Redirection Table (SPCR), Rev. 1.02
  *

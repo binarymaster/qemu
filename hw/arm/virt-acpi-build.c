@@ -503,6 +503,41 @@ build_iort(GArray *table_data, BIOSLinker *linker, VirtMachineState *vms)
 }
 
 static void
+build_dbg2(GArray *table_data, BIOSLinker *linker, VirtMachineState *vms)
+{
+    AcpiDebugPort2 *dbg2;
+    const MemMapEntry *uart_memmap = &vms->memmap[VIRT_UART];
+    int dbg2_start = table_data->len;
+
+    dbg2 = acpi_data_push(table_data, sizeof(*dbg2));
+
+    dbg2->debug_devices_offset = 44;
+    dbg2->number_debug_devices = 1;
+    dbg2->debug_devices[0].revision = 0;
+    dbg2->debug_devices[0].length = 40;
+    dbg2->debug_devices[0].number_generic_address_registers = 1;
+    dbg2->debug_devices[0].namespace_string_length = 2;
+    dbg2->debug_devices[0].namespace_string_offset = 38;
+    dbg2->debug_devices[0].oem_data_length = 0;
+    dbg2->debug_devices[0].oem_data_offset = 0;
+    dbg2->debug_devices[0].port_type = 0x8000;    /* Serial */
+    dbg2->debug_devices[0].port_subtype = 0x3;    /* ARM PL011 UART */
+    dbg2->debug_devices[0].base_address_register_offset = 22;
+
+    dbg2->debug_devices[0].base_address[0].space_id = AML_SYSTEM_MEMORY;
+    dbg2->debug_devices[0].base_address[0].bit_width = 8;
+    dbg2->debug_devices[0].base_address[0].bit_offset = 0;
+    dbg2->debug_devices[0].base_address[0].access_width = 1;
+    dbg2->debug_devices[0].base_address[0].address = cpu_to_le64(uart_memmap->base);
+
+    strcpy((char *)dbg2->debug_devices[0].namespace_string, ".");
+
+    //build_header(linker, table_data, (void *)dbg2, "DBG2", sizeof(*dbg2), 0);
+    build_header(linker, table_data, (void *)(table_data->data + dbg2_start),
+        "DBG2", table_data->len - dbg2_start, 0, NULL, NULL);
+}
+
+static void
 build_spcr(GArray *table_data, BIOSLinker *linker, VirtMachineState *vms)
 {
     AcpiSerialPortConsoleRedirection *spcr;
@@ -828,6 +863,9 @@ void virt_acpi_build(VirtMachineState *vms, AcpiBuildTables *tables)
 
     acpi_add_table(table_offsets, tables_blob);
     build_mcfg(tables_blob, tables->linker, vms);
+
+    acpi_add_table(table_offsets, tables_blob);
+    build_dbg2(tables_blob, tables->linker, vms);
 
     acpi_add_table(table_offsets, tables_blob);
     build_spcr(tables_blob, tables->linker, vms);
