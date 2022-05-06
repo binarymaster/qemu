@@ -79,6 +79,7 @@
 #include "hw/virtio/virtio-iommu.h"
 #include "hw/char/pl011.h"
 #include "qemu/guest-random.h"
+#include "hw/usb/hcd-ehci.h"
 
 #define DEFINE_VIRT_MACHINE_LATEST(major, minor, latest) \
     static void virt_##major##_##minor##_class_init(ObjectClass *oc, \
@@ -154,6 +155,8 @@ static const MemMapEntry base_memmap[] = {
     [VIRT_NVDIMM_ACPI] =        { 0x09090000, NVDIMM_ACPI_IO_LEN},
     [VIRT_PVTIME] =             { 0x090a0000, 0x00010000 },
     [VIRT_SECURE_GPIO] =        { 0x090b0000, 0x00001000 },
+    [VIRT_EHCI] =               { 0x090c0000, 0x00001000 },
+    [VIRT_SDHCI] =              { 0x090d0000, 0x00000100 },
     [VIRT_MMIO] =               { 0x0a000000, 0x00000200 },
     /* ...repeating for a total of NUM_VIRTIO_TRANSPORTS, each of that size */
     [VIRT_PLATFORM_BUS] =       { 0x0c000000, 0x02000000 },
@@ -194,6 +197,8 @@ static const int a15irqmap[] = {
     [VIRT_GIC_V2M] = 48, /* ...to 48 + NUM_GICV2M_SPIS - 1 */
     [VIRT_SMMU] = 74,    /* ...to 74 + NUM_SMMU_IRQS - 1 */
     [VIRT_PLATFORM_BUS] = 112, /* ...to 112 + PLATFORM_BUS_NUM_IRQS -1 */
+    [VIRT_EHCI] = 176,
+    [VIRT_SDHCI] = 177,
 };
 
 static const char *valid_cpus[] = {
@@ -859,6 +864,12 @@ static void create_uart(const VirtMachineState *vms, int uart,
     }
 
     g_free(nodename);
+}
+
+static void create_ehci(const VirtMachineState *vms, int ehci)
+{
+    sysbus_create_simple(TYPE_PLATFORM_EHCI, vms->memmap[ehci].base,
+                         qdev_get_gpio_in(vms->gic, vms->irqmap[ehci]));
 }
 
 static void create_rtc(const VirtMachineState *vms)
@@ -2183,6 +2194,7 @@ static void machvirt_init(MachineState *machine)
     fdt_add_pmu_nodes(vms);
 
     create_uart(vms, VIRT_UART, sysmem, serial_hd(0));
+    create_ehci(vms, VIRT_EHCI);
 
     if (vms->secure) {
         create_secure_ram(vms, secure_sysmem, secure_tag_sysmem);
